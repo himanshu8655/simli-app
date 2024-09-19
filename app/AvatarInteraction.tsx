@@ -48,12 +48,13 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
   const initializeSimliClient = useCallback(() => {
     if (videoRef.current && audioRef.current) {
       const SimliConfig = {
-        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY || '',
         faceID: simli_faceid,
         handleSilence: true,
         videoRef: videoRef,
         audioRef: audioRef,
       };
+      console.log('Simli API Key:', process.env.NEXT_PUBLIC_SIMLI_API_KEY);
 
       simliClientRef.current = new SimliClient();
       simliClientRef.current.Initialize(SimliConfig);
@@ -214,7 +215,7 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
             className="w-full mt-4 bg-simliblue text-white py-3 px-6 rounded-[100px] transition-all duration-300 hover:text-black hover:bg-white hover:rounded-sm"
           >
             <span className="font-abc-repro-mono font-bold w-[164px]">
-              Test Interaction
+              Facetime Vera
             </span>
           </button>
         ) : isAvatarVisible ? (
@@ -223,7 +224,7 @@ const AvatarInteraction: React.FC<AvatarInteractionProps> = ({
             className="w-full mt-4 bg-red-600 text-white py-3 justify-center rounded-[100px] backdrop-blur transition-all duration-300 hover:rounded hover:bg-white hover:text-black hover:rounded-sm px-6"
           >
             <span className="font-abc-repro-mono font-bold w-[164px]">
-              Stop
+              End call
             </span>
           </button>
 
