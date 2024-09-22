@@ -111,6 +111,13 @@ After collecting detailed information, provide specific case studies and actiona
 
 LEAVE NOTHING OUT`;
 
+let messages = [
+  {
+    role: "system",
+    content: systemPrompt,
+  },
+];
+
 // Connection manager to keep track of active connections
 const connections = new Map();
 
@@ -121,6 +128,7 @@ app.post("/start-conversation", (req, res) => {
   }
 
   const connectionId = Date.now().toString();
+  messages.push({ role: "assistant", content: prompt });
   connections.set(connectionId, { prompt, voiceId });
   res.json({
     connectionId,
@@ -258,23 +266,17 @@ function setupWebSocket(ws, initialPrompt, voiceId, connectionId) {
 
 async function promptLLM(ws, initialPrompt, prompt, voiceId, connectionId) {
   try {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+
+    console.log(messages);
+
     const stream = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "assistant",
-          content: initialPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 1,
+      messages: [...messages],
+      temperature: 0.4,
       max_tokens: 50,
       top_p: 1,
       stream: true,
@@ -296,6 +298,12 @@ async function promptLLM(ws, initialPrompt, prompt, voiceId, connectionId) {
 
       ws.send(JSON.stringify({ type: "text", content: chunkMessage }));
     }
+    messages.push({
+      role: "assistant",
+      content: fullResponse,
+    });
+
+    console.log(fullResponse);
 
     if (!playHTStream && fullResponse.length > 0) {
       playHTStream = await PlayHT.stream(fullResponse, streamingOptions);
