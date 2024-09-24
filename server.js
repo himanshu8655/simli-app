@@ -111,6 +111,7 @@ After collecting detailed information, provide specific case studies and actiona
 
 LEAVE NOTHING OUT`;
 
+// initializing with the system prompt
 let messages = [
   {
     role: "system",
@@ -128,8 +129,8 @@ app.post("/start-conversation", (req, res) => {
   }
 
   const connectionId = Date.now().toString();
-  messages.push({ role: "assistant", content: prompt });
   connections.set(connectionId, { prompt, voiceId });
+
   res.json({
     connectionId,
     message: "Conversation started. Connect to WebSocket to continue.",
@@ -162,6 +163,9 @@ function setupWebSocket(ws, initialPrompt, voiceId, connectionId) {
   let is_finals = [];
   let audioQueue = [];
   let keepAlive;
+
+  // pushing the initial response
+  messages.push({ role: "assistant", content: initialPrompt });
 
   const deepgram = deepgramClient.listen.live({
     model: "nova-2",
@@ -266,18 +270,16 @@ function setupWebSocket(ws, initialPrompt, voiceId, connectionId) {
 
 async function promptLLM(ws, initialPrompt, prompt, voiceId, connectionId) {
   try {
+    // pushing the user response
     messages.push({
       role: "user",
       content: prompt,
     });
 
-    console.log(messages);
-
     const stream = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [...messages],
       temperature: 0.4,
-      max_tokens: 50,
       top_p: 1,
       stream: true,
     });
@@ -297,7 +299,11 @@ async function promptLLM(ws, initialPrompt, prompt, voiceId, connectionId) {
       fullResponse += chunkMessage;
 
       ws.send(JSON.stringify({ type: "text", content: chunkMessage }));
+
+      // get audio chunk by chunk
     }
+
+    // pushing the gpt response
     messages.push({
       role: "assistant",
       content: fullResponse,
